@@ -1,5 +1,7 @@
 # Security, module by module
 
+**English** · [Polski](security-design.pl.md)
+
 How I built and secured the lab, one module at a time (H0 to H11), and the controls in code that matter most. Excerpts are quoted exactly from my private lab repository at commit `892f75a` (8 Oct 2026), with their file and line numbers. The files under [`code/`](../code/) are copied in full.
 
 **Contents**
@@ -199,7 +201,7 @@ The reader is a filter, not a guarantee, so the checker doesn't rely on it.
 
 **3. The tools.** Every result says that tenant text is data. The tools flag tenant names that read like instructions, and the checker raises its own flag whatever the model says ([checker.py lines 82–91](../code/common/checker.py#L82-L91)).
 
-**4. The checker.** It judges an answer by the control the workflow itself matched, not the one the agent chose, so a planted instruction can't make the agent pick a rule with better evidence ([checker.py lines 116–128](../code/common/checker.py#L116-L128)). It never raises an answer.
+**4. The checker.** It judges an answer by the control the workflow itself matched, not the one the agent chose, so a planted instruction gains nothing by making the agent pick a rule with better evidence ([checker.py lines 116–128](../code/common/checker.py#L116-L128)). It never raises an answer.
 
 **5. A person** reads every flagged answer before anything is approved.
 

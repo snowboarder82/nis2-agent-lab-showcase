@@ -1,5 +1,7 @@
 # Results
 
+**English** · [Polski](results.pl.md)
+
 How I measured the agent and attacked it, with the numbers. Every number comes from the run named next to it, and each is the newest run of its kind. All runs are from 8 Oct 2026: the red-team runs for module H9 and the golden-set runs for module H10. Every run used made-up firms or my own lab tenant.
 
 **Contents**

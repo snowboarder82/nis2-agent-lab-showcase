@@ -1,5 +1,7 @@
 # Azure resources and identities
 
+**English** · [Polski](azure.pl.md)
+
 What the lab runs in Azure (H0 to H11), where, and who may do what. The names are the lab's own, except for resources whose names must be unique across Azure: those are described instead of named. No IDs appear anywhere in this repository.
 
 **Contents**

@@ -1,5 +1,7 @@
 # Git, CI/CD and the release pipeline
 
+**English** · [Polski](pipeline.pl.md)
+
 How a change gets from my Mac to Azure, as I designed and built it in modules H1 and H11. Its state today is at the [end](#state-today). The four pipeline files are in [`pipeline/`](../pipeline/), copied unchanged from commit `892f75a`. In my lab they live in `.github/` and `.githooks/`; here they sit outside `.github/`, so GitHub never runs them.
 
 **Contents**
