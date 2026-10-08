@@ -39,7 +39,7 @@ Where data is processed: each model deployment's type decides it. `config/models
 
 `config/models.json` also lists two optional GPT-6 models for a later comparison; none of the runs in [results.md](results.md) used them.
 
-The tools, Foundry and the storage account are reachable from the internet, with Entra sign-in and roles as the only door. Private networking was out of scope for this lab ([known gaps](security.md#known-gaps)).
+The tools, Foundry and the storage account are reachable from the internet, with Entra sign-in and roles as the only door. Private networking was out of scope for this lab ([known gaps](security-design.md#known-gaps)).
 
 ## Identities and roles
 
@@ -96,7 +96,7 @@ The known exceptions:
 - The tools' identity can write anywhere in the lab's storage account.
 - The `gate` job's identity could create an agent version.
 
-More in the [README's Limits](../README.md#limits) and the [known gaps](security.md#known-gaps).
+More in the [README's Limits](../README.md#limits) and the [known gaps](security-design.md#known-gaps).
 
 ## What a stolen identity could do
 
@@ -112,5 +112,5 @@ More in the [README's Limits](../README.md#limits) and the [known gaps](security
 - A 0.5 GB daily cap on Log Analytics.
 - The Function app may run at most 10 instances at once, with none kept warm.
 - A speed limit (tokens per minute) on each model deployment, as planned in [models.json](../code/config/models.json), which slows a runaway loop down.
-- Hard limits in each workflow run: at most 40 questions, 200 tool calls and €2 ([security.md](security.md#the-agent-and-the-workflow-in-code)).
+- Hard limits in each workflow run: at most 40 questions, 200 tool calls and €2 ([security-design.md](security-design.md#the-agent-and-the-workflow-in-code)).
 - A gate rule: drafting and matching a 30-question questionnaire must cost €1.00 or less ([gate.yaml](../code/eval/gate.yaml)).
