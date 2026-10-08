@@ -1,0 +1,41 @@
+# Dependabot (H11): GitHub opens pull requests that update your pinned packages and actions.
+# Each one goes through the same checks as your own pull requests, and nothing merges by itself.
+version: 2
+updates:
+  # Python packages. Dependabot reads the requirements files in this folder and in the folders
+  # one level down: requirements.txt, requirements-redteam.txt and functions/requirements.txt.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Warsaw"
+    # A new version must be a week old before Dependabot offers it: poisoned releases are
+    # usually found and pulled within days. Security fixes still come straight away.
+    cooldown:
+      default-days: 7
+    # One pull request for all minor and patch updates; each major update gets its own.
+    groups:
+      pip-minor-and-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      # agent-framework-foundry 1.14 needs azure-ai-projects below 2.8 (see requirements.txt).
+      # Delete this rule when a newer agent-framework-foundry allows 2.8.
+      - dependency-name: "azure-ai-projects"
+        versions: [">=2.8.0"]
+
+  # The actions in .github/workflows. Dependabot updates each pinned commit ID and the
+  # version comment next to it together.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Warsaw"
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]

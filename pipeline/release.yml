@@ -1,0 +1,272 @@
+# Release (H11): what GitHub does after a pull request is merged into main.
+#   changes  decides what changed since the last green release (tools/changed.py)
+#   tools    deploys the Function app, if functions/ changed            environment: tools
+#   gate     builds kwestionariusz-nis2-next from this commit, runs     environment: eval
+#            the golden set on it, lets the judge read the Polish
+#            and asks the gate
+#   agent    publishes the new version of kwestionariusz-nis2, only     environment: agent
+#            if the gate said PASS and the code differs from the live agent
+# Every job with an environment waits for your approval, runs on main only, and signs in to
+# Azure through OIDC: GitHub vouches for the job, Microsoft Entra ID trusts that, and GitHub
+# stores no password or key. Start it by hand: Actions > release > Run workflow.
+name: release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run:
+        description: "What to run"
+        type: choice
+        options: [agent, tools, both]
+        default: agent
+
+# Nothing here may change the repository. A job that signs in to Azure asks for id-token itself.
+permissions:
+  contents: read
+
+# One release at a time. While one runs, the newest waits; an older waiting one is dropped,
+# because the newest covers everything since the last green release.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # actions: read lets it ask GitHub which release last ended green.
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      tools: ${{ steps.what.outputs.tools }}
+      answers: ${{ steps.what.outputs.answers }}
+    steps:
+      - name: Get the code with its history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # A run for an older commit stops here, before it asks you for anything.
+      - name: Stop if main has moved on
+        run: python3 -m tools.changed --newest
+
+      - name: Decide what changed since the last green release
+        id: what
+        env:
+          EVENT: ${{ github.event_name }}
+          RUN: ${{ inputs.run }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -m tools.changed
+
+  # The job that can deploy runs no Python packages: only GitHub's checkout, Microsoft's two
+  # actions and a few lines of shell.
+  tools:
+    needs: changes
+    if: needs.changes.outputs.tools == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: tools
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Get the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Stop if main has moved on
+        run: python3 -m tools.changed --newest
+
+      - name: Write .env from the DOTENV secret and hide its values in the log
+        env:
+          DOTENV: ${{ secrets.DOTENV }}
+        run: python3 -m tools.ci_env tools
+
+      - name: Sign in to Azure as id-nis2-github-tools (OIDC, no secret)
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ env.LOGIN_CLIENT_ID }}
+          tenant-id: ${{ env.LOGIN_TENANT_ID }}
+          subscription-id: ${{ env.LOGIN_SUBSCRIPTION_ID }}
+
+      - name: Deploy functions/ with a remote build
+        uses: Azure/functions-action@c5060b3b8bb1ebbcb531abd00c822ecbaa8ea656 # v1.5.7
+        with:
+          app-name: ${{ env.FUNC_APP }}
+          package: functions
+          remote-build: true
+          respect-funcignore: true
+
+      - name: Check the tools still refuse a caller without a token
+        run: |
+          for try in 1 2 3 4 5 6; do
+            code=$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 60 \
+              "https://${FUNC_HOST}/api/health" || true)
+            echo "Try ${try}: HTTP ${code}"
+            if [ "${code}" = "401" ]; then
+              echo "PASS: without a token the tools answer 401 Unauthorized."
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "FAIL: expected 401. 200 means Easy Auth is off; 000 means no answer."
+          exit 1
+
+  gate:
+    needs: [changes, tools]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.answers == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: eval
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      publish: ${{ steps.differs.outputs.publish }}
+    env:
+      CANDIDATE: kwestionariusz-nis2-next
+    steps:
+      - name: Get the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Stop if main has moved on
+        run: python3 -m tools.changed --newest
+
+      - name: Install Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install the pinned packages
+        run: python -m pip install -r requirements.txt
+
+      - name: Write .env from the DOTENV secret and hide its values in the log
+        env:
+          DOTENV: ${{ secrets.DOTENV }}
+        run: python -m tools.ci_env eval
+
+      - name: Sign in to Azure as id-nis2-github-agent (OIDC, no secret)
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ env.LOGIN_CLIENT_ID }}
+          tenant-id: ${{ env.LOGIN_TENANT_ID }}
+          subscription-id: ${{ env.LOGIN_SUBSCRIPTION_ID }}
+
+      # GitHub's sign-in token lasts only minutes, and Azure CLI can't renew it. Tokens fetched
+      # now stay valid for the whole run, so fetch every one the run needs straight away.
+      - name: Fetch every token the run needs while the sign-in is fresh
+        run: |
+          for resource in https://ai.azure.com https://search.azure.com https://storage.azure.com https://management.azure.com; do
+            az account get-access-token --scope "${resource}/.default" --tenant "${LOGIN_TENANT_ID}" --output none
+          done
+
+      - name: Build the release candidate from this commit
+        id: build
+        run: |
+          python -m eval.candidates --delete "${CANDIDATE}"
+          python -m eval.candidates --next --create
+
+      - name: Run the golden set on the candidate
+        run: python -m eval.run --next
+
+      - name: Find its results
+        id: results
+        run: |
+          path=$(find runs -path 'runs/golden-*-next/results.json' | sort | tail -n 1)
+          echo "Results: ${path}"
+          echo "path=${path}" >> "${GITHUB_OUTPUT}"
+
+      - name: Sign in again for the judge
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ env.LOGIN_CLIENT_ID }}
+          tenant-id: ${{ env.LOGIN_TENANT_ID }}
+          subscription-id: ${{ env.LOGIN_SUBSCRIPTION_ID }}
+
+      - name: Fetch the tokens again
+        run: |
+          for resource in https://ai.azure.com https://management.azure.com; do
+            az account get-access-token --scope "${resource}/.default" --tenant "${LOGIN_TENANT_ID}" --output none
+          done
+
+      - name: Let the judge read the Polish
+        env:
+          RESULTS: ${{ steps.results.outputs.path }}
+        run: python -m eval.judge "${RESULTS}"
+
+      - name: Ask the gate
+        env:
+          RESULTS: ${{ steps.results.outputs.path }}
+        run: python -m eval.gate "${RESULTS}"
+
+      - name: Does the live agent need a new version?
+        id: differs
+        run: python -m agents.release
+
+      - name: Put the scores on the run's summary page
+        if: ${{ always() && steps.results.outputs.path != '' }}
+        env:
+          RESULTS: ${{ steps.results.outputs.path }}
+        run: |
+          {
+            echo "### Golden set on ${CANDIDATE}"
+            echo '```text'
+            python -m eval.score "${RESULTS}"
+            echo
+            python -m eval.gate "${RESULTS}" || true
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Delete the release candidate
+        if: ${{ always() && steps.build.outcome != 'skipped' }}
+        run: python -m eval.candidates --delete "${CANDIDATE}"
+
+  agent:
+    needs: gate
+    if: ${{ !cancelled() && !failure() && needs.gate.result == 'success' && needs.gate.outputs.publish == 'true' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: agent
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Get the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Stop if main has moved on
+        run: python3 -m tools.changed --newest
+
+      - name: Install Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install the pinned packages
+        run: python -m pip install -r requirements.txt
+
+      - name: Write .env from the DOTENV secret and hide its values in the log
+        env:
+          DOTENV: ${{ secrets.DOTENV }}
+        run: python -m tools.ci_env agent
+
+      - name: Sign in to Azure as id-nis2-github-agent (OIDC, no secret)
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ env.LOGIN_CLIENT_ID }}
+          tenant-id: ${{ env.LOGIN_TENANT_ID }}
+          subscription-id: ${{ env.LOGIN_SUBSCRIPTION_ID }}
+
+      - name: Publish the new version of kwestionariusz-nis2
+        run: python -m agents.release --create

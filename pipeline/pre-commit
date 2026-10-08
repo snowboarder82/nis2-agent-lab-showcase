@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Runs on your Mac before every commit. Turn it on once per clone with:
+#   git config core.hooksPath .githooks
+# It does two things and stops the commit if either finds a problem:
+#   1. refuses files that hold settings or keys (.env, *.env, local.settings.json, *.pem, *.pfx, *.key)
+#   2. scans the changes you staged for secrets with gitleaks
+set -euo pipefail
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+blocked=$(printf '%s\n' "$staged" | grep -E '\.env$|(^|/)local\.settings\.json$|\.(pem|pfx|key)$' || true)
+if [ -n "$blocked" ]; then
+  echo "BLOCKED: these files hold settings or keys and must never be committed:"
+  printf '%s\n' "$blocked" | sed 's/^/  /'
+  echo "Take them out of the commit with:  git restore --staged <file>"
+  exit 1
+fi
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "BLOCKED: gitleaks isn't installed, so the secret scan can't run."
+  echo "Install it with:  brew install gitleaks   and commit again."
+  exit 1
+fi
+
+if ! gitleaks git --pre-commit --staged --redact --no-banner --verbose; then
+  echo
+  echo "BLOCKED: gitleaks found something that looks like a secret (shown above, redacted)."
+  echo "Remove it from the file, or take the file out of the commit with:  git restore --staged <file>"
+  exit 1
+fi
+echo "Secret scan: nothing found."
