@@ -79,7 +79,7 @@ Resources, identities and roles: [docs/azure.md](docs/azure.md).
 - **A person decides.** The decision is written once, and the export takes only a pack with my approval on record, unchanged since.
 - **Measured before release.** A golden set of 54 questions plus 13 attack rows, and a gate with zero-tolerance safety rules, before a new version of the agent may be published.
 
-Module by module, with code excerpts: [docs/security.md](docs/security.md). Git, CI/CD and the release pipeline: [docs/pipeline.md](docs/pipeline.md).
+Module by module, with code excerpts: [docs/security-design.md](docs/security-design.md). Git, CI/CD and the release pipeline: [docs/pipeline.md](docs/pipeline.md).
 
 ## Results
 
@@ -108,13 +108,13 @@ All numbers, the model comparison and a deliberately broken copy that the gate c
 | EU-only model deployments, checked in code | [code/common/models.py](code/common/models.py), [code/config/models.json](code/config/models.json) |
 | Python tools on Azure Functions behind Entra sign-in, with allow-lists and audit lines | [code/functions/](code/functions/) |
 | Evidence records with SHA-256, and the checker that lowers but never raises | [evidence.py](code/functions/shared/evidence.py), [checker.py](code/common/checker.py) |
-| Reading Microsoft Graph with no secret, six read-only permissions | [docs/security.md](docs/security.md#reading-a-firms-tenant-without-a-secret) |
-| Agent orchestration with Microsoft Agent Framework, and run limits | [docs/security.md](docs/security.md#the-agent-and-the-workflow-in-code) |
-| Approval with a Logic App and Event Grid | [docs/security.md](docs/security.md#a-person-decides) |
-| KQL audit queries in Application Insights | [docs/security.md](docs/security.md#audit-and-kql) |
+| Reading Microsoft Graph with no secret, six read-only permissions | [docs/security-design.md](docs/security-design.md#reading-a-firms-tenant-without-a-secret) |
+| Agent orchestration with Microsoft Agent Framework, and run limits | [docs/security-design.md](docs/security-design.md#the-agent-and-the-workflow-in-code) |
+| Approval with a Logic App and Event Grid | [docs/security-design.md](docs/security-design.md#a-person-decides) |
+| KQL audit queries in Application Insights | [docs/security-design.md](docs/security-design.md#audit-and-kql) |
 | Evaluation, the release gate and the red team | [docs/results.md](docs/results.md), [code/eval/gate.yaml](code/eval/gate.yaml) |
 | CI/CD with OIDC, tests for the workflow rules, Dependabot and gitleaks | [docs/pipeline.md](docs/pipeline.md), [pipeline/](pipeline/), [code/tests/test_workflows.py](code/tests/test_workflows.py) |
-| Screenshots of the live lab and its repository (8 Oct 2026), each placed next to what it proves | [docs/security.md](docs/security.md), [docs/azure.md](docs/azure.md#resources), [docs/pipeline.md](docs/pipeline.md); all in [images/](images/) |
+| Screenshots of the live lab and its repository (8 Oct 2026), each placed next to what it proves | [docs/security-design.md](docs/security-design.md), [docs/azure.md](docs/azure.md#resources), [docs/pipeline.md](docs/pipeline.md); all in [images/](images/) |
 
 ## What's private and why
 
@@ -141,7 +141,7 @@ Microsoft Foundry Agent Service (prompt agents, guardrails, evaluations) · Azur
 - My lab repository is private, and GitHub Free doesn't offer environment approvals and secrets for a private repository, so the release pipeline doesn't run there as designed ([state today](docs/pipeline.md#state-today)).
 - Checks that need an Entra ID P1 licence say so instead of guessing.
 
-More known gaps: [docs/security.md](docs/security.md#known-gaps).
+More known gaps: [docs/security-design.md](docs/security-design.md#known-gaps).
 
 ## Licence
 
