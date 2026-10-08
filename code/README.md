@@ -1,5 +1,7 @@
 # The code
 
+**English** · [Polski](README.pl.md)
+
 These files are copied unchanged, byte for byte, from my private lab repository at commit `892f75a1e07a42601a0a4dfc9ef1193a99bdadb6`: the merge of module H11, on 8 Oct 2026. They keep their paths from the lab, so `code/common/checker.py` here is `common/checker.py` there.
 
 The four pipeline files are in [`../pipeline/`](../pipeline/) instead of `.github/` and `.githooks/`, so GitHub never runs them here.
