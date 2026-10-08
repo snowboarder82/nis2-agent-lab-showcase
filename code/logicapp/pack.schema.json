@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "schema": { "type": "integer" },
+    "pack_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "firm": { "type": "string" },
+    "questionnaire": {
+      "type": "object",
+      "properties": { "file": { "type": "string" } }
+    },
+    "email_summary": { "type": "string" },
+    "sha256": { "type": "string" }
+  },
+  "required": ["schema", "pack_id", "run_id", "email_summary", "sha256"]
+}
