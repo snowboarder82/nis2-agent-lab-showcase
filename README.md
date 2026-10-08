@@ -1,5 +1,7 @@
 # NIS2 questionnaire agent on Azure
 
+**English** · [Polski](README.pl.md)
+
 An AI agent that drafts answers to NIS2 supplier security questionnaires, and backs each answer with read-only evidence from a firm's Microsoft Entra ID and Microsoft 365 settings.
 
 I built and tested it step by step in my own Azure lab, in twelve modules (H0 to H11), with made-up firms and my own lab tenant. It has never read a real firm's tenant, and it certifies nothing. This repository shows how it is built and secured; the full lab stays in a private repository ([what's private and why](#whats-private-and-why)).
