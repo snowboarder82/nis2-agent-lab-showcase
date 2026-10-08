@@ -1,0 +1,36 @@
+{
+  "checked": "2026-10-06",
+  "region": "swedencentral",
+  "source": "Microsoft Learn: region availability, deployment types and the model retirement schedule (all checked 6 Oct 2026)",
+  "types": {
+    "DataZoneStandard": {"label": "Data Zone Standard", "processing": "only inside the EU data zone"},
+    "Standard": {"label": "Standard", "processing": "only in the resource's own geography (Sweden)"}
+  },
+  "models": {
+    "gpt-5.4-mini": {
+      "version": "2026-03-17", "type": "DataZoneStandard", "tpm_k": 50, "reasoning": true,
+      "module": "H2", "retires": "2027-09-21",
+      "job": "drafts the answers (H6) and picks a control when the search isn't sure (H7)"
+    },
+    "gpt-4o": {
+      "version": "2024-11-20", "type": "Standard", "tpm_k": 40, "reasoning": false,
+      "module": "H2", "retires": "2027-04-14",
+      "job": "reviews the risky answers (H7) and is the second drafter in the comparison (H10)"
+    },
+    "gpt-4.1": {
+      "version": "2025-04-14", "type": "Standard", "tpm_k": 30, "reasoning": false,
+      "module": "H10", "retires": "2027-04-14", "optional": true,
+      "job": "judges only the Polish wording in evaluations (H10); if Azure won't let you deploy it, gpt-4o does this job"
+    },
+    "gpt-6-luna": {
+      "version": "2026-09-22", "type": "DataZoneStandard", "tpm_k": 30, "reasoning": true,
+      "module": "H10", "retires": null, "optional": true,
+      "job": "an extra drafter for the comparison (H10), only if Microsoft grants you quota for it"
+    },
+    "gpt-6-sol": {
+      "version": "2026-09-22", "type": "DataZoneStandard", "tpm_k": 20, "reasoning": true,
+      "module": "H10", "retires": null, "optional": true,
+      "job": "an extra drafter for the comparison (H10), only if Microsoft grants you quota for it"
+    }
+  }
+}
