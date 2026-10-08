@@ -4,7 +4,7 @@ These files are copied unchanged, byte for byte, from my private lab repository 
 
 The four pipeline files are in [`../pipeline/`](../pipeline/) instead of `.github/` and `.githooks/`, so GitHub never runs them here.
 
-The comments in these files say "you" and name lab modules such as H6: I built the lab from a step-by-step guide, so "you" is me, and H0 to H11 are the lab's modules ([table](../docs/security.md#the-build-module-by-module)).
+The comments in these files say "you" and name lab modules such as H6: I built the lab from a step-by-step guide, so "you" is me, and H0 to H11 are the lab's modules ([table](../docs/security-design.md#the-build-module-by-module)).
 
 ## What each file shows
 
@@ -24,7 +24,7 @@ The comments in these files say "you" and name lab modules such as H6: I built t
 | [logicapp/pack.schema.json](logicapp/pack.schema.json) | The shape the approval Logic App accepts for a pack |
 | [tests/test_workflows.py](tests/test_workflows.py) | 26 tests that guard the security rules of the CI and release workflows |
 
-How these fit together: [docs/security.md](../docs/security.md).
+How these fit together: [docs/security-design.md](../docs/security-design.md).
 
 ## Why it doesn't run on its own
 
